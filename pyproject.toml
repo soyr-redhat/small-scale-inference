@@ -12,5 +12,8 @@ dev = [
     "pytest",
 ]
 
+[tool.setuptools.packages.find]
+include = ["layers*", "architectures*", "weights*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
