@@ -49,4 +49,4 @@ def test_output_matches_huggingface():
     with torch.no_grad():
         hf_logits = hf_model(token_ids).logits
 
-    assert torch.allclose(our_logits, hf_logits, atol=1e-2)
+    assert torch.allclose(our_logits, hf_logits, atol=1e-4)
