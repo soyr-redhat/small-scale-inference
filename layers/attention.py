@@ -39,7 +39,7 @@ class MultiHeadAttention(nn.Module):
 
         # Causal mask — prevent attending to future tokens
         # Offset rows so cached positions are visible to new queries
-        lower_tri = torch.tril(torch.ones(full_seq_len, full_seq_len))
+        lower_tri = torch.tril(torch.ones(full_seq_len, full_seq_len, device=x.device))
         lower_tri = lower_tri[full_seq_len - seq_len:]  # take last seq_len rows
         scores = scores.masked_fill(lower_tri == 0, float("-inf"))
 
