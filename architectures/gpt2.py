@@ -14,29 +14,46 @@ class GPT2(nn.Module):
         self.lm_head = nn.Linear(d_model, vocab_size, bias=False)
         self.max_seq_len = max_seq_len
 
-    def forward(self, token_ids: torch.Tensor) -> torch.Tensor:
+    def forward(self,
+                token_ids: torch.Tensor, 
+                kv_caches=None) -> tuple[torch.Tensor, list]:
         # Embed tokens and positions, then sum
         _, seq_len = token_ids.shape
         tok_emb = self.token_emb(token_ids)
-        positions = torch.arange(seq_len, device=token_ids.device)
+        if kv_caches is not None:
+            past_len = kv_caches[0][0].shape[2]  # cached seq length
+        else:
+            past_len = 0
+        positions = torch.arange(past_len, past_len + seq_len, device=token_ids.device)
         pos_emb = self.pos_emb(positions)
         x = tok_emb + pos_emb
 
-        # Pass through all transformer blocks
-        for block in self.blocks:
-            x = block(x)
+                # Pass through all transformer blocks
+        new_caches = []
+        for i, block in enumerate(self.blocks):
+            layer_cache = kv_caches[i] if kv_caches else None
+            x, cache = block(x, kv_cache=layer_cache)
+            new_caches.append(cache)
 
         # Final norm and project to vocabulary logits
         x = self.final_norm(x)
         x = self.lm_head(x)
-        return x
+        return (x, new_caches)
 
-    def generate(self, token_ids: torch.Tensor, max_new_tokens: int = 50) -> torch.Tensor:
+    def generate(self, 
+                token_ids: torch.Tensor,
+                max_new_tokens: int = 50,
+                kv_caches = None) -> torch.Tensor:
         # Greedy autoregressive decoding
         for _ in range(max_new_tokens):
+            if kv_caches is None:
+                input_ids = token_ids
+            else:
+                input_ids = token_ids[:, -1:]
+
+            
             # Truncate to max context window
-            token_ids = token_ids[:, -self.max_seq_len:]
-            logits = self.forward(token_ids)
+            logits, kv_caches = self.forward(input_ids, kv_caches)
             # Take logits at last position and pick highest-probability token
             logits = logits[:, -1, :]
             top_one = torch.argmax(logits, dim=-1, keepdim=True)
