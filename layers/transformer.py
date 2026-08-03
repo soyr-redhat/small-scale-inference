@@ -13,8 +13,12 @@ class TransformerBlock(nn.Module):
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(
+            self, 
+            x: torch.Tensor, 
+            kv_cache=None) -> tuple[torch.Tensor, torch.Tensor]:
         # Pre-norm residual connections
-        x = x + self.mha(self.norm1(x))
+        attn_out, new_cache = self.mha(self.norm1(x), kv_cache=kv_cache)
+        x = x + attn_out
         x = x + self.ff(self.norm2(x))
-        return x
+        return x, new_cache
