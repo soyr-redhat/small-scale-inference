@@ -52,6 +52,30 @@ def test_output_matches_huggingface():
     assert torch.allclose(our_logits, hf_logits, atol=1e-4)
 
 
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
+def test_forward_on_gpu():
+    model = GPT2(vocab_size=100, d_model=64, n_heads=4, n_layers=2, d_ff=256, max_seq_len=32)
+    model.to("cuda")
+    model.eval()
+    token_ids = torch.randint(0, 100, (1, 5), device="cuda")
+    with torch.no_grad():
+        logits, caches = model(token_ids)
+    assert logits.device.type == "cuda"
+    assert logits.shape == (1, 5, 100)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="requires GPU")
+def test_generate_on_gpu():
+    model = GPT2(vocab_size=100, d_model=64, n_heads=4, n_layers=2, d_ff=256, max_seq_len=32)
+    model.to("cuda")
+    model.eval()
+    token_ids = torch.randint(0, 100, (1, 5), device="cuda")
+    with torch.no_grad():
+        output = model.generate(token_ids, max_new_tokens=10)
+    assert output.device.type == "cuda"
+    assert output.shape[1] == 15
+
+
 def test_cached_output_matches_uncached():
     model = GPT2(vocab_size=100, d_model=64, n_heads=4, n_layers=2, d_ff=256, max_seq_len=32)
     model.eval()
