@@ -8,26 +8,7 @@ def sample_next_token(
    top_p: float | None = None) -> torch.Tensor:
    """
    Sample the next token from logits.
-
    logits shape: (batch, vocab_size) — raw scores for each token in the vocabulary
-
-   Steps:
-   1. Apply temperature scaling: logits = logits / temperature
-      - temperature < 1 → more confident (sharper distribution)
-      - temperature > 1 → more random (flatter distribution)
-
-   2. Apply top-k filtering (if top_k is set):
-      - Use torch.topk(logits, top_k) to get the k highest values
-      - Set everything below the k-th value to -inf
-
-   3. Apply top-p / nucleus filtering (if top_p is set):
-      - Sort logits descending
-      - Compute cumulative probabilities via softmax then cumsum
-      - Mask tokens where cumulative probability exceeds top_p
-      - Scatter the mask back to original positions
-
-   4. Convert to probabilities with softmax, then sample with torch.multinomial
-
    Returns: token IDs, shape (batch, 1)
    """
    logits = logits / temperature
