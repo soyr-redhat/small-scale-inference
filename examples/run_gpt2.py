@@ -14,11 +14,19 @@ def main():
     prompt = "The meaning of life is"
     token_ids = tokenizer.encode(prompt, return_tensors="pt")
 
-    print(f"Prompt: {prompt}")
-    with torch.no_grad():
-        output_ids = model.generate(token_ids, max_new_tokens=30)
+    configs = [
+        {"label": "Greedy (temperature=0.01)", "temperature": 0.01},
+        {"label": "Creative (temperature=0.9, top_k=50)", "temperature": 0.9, "top_k": 50},
+        {"label": "Nucleus (temperature=0.8, top_p=0.9)", "temperature": 0.8, "top_p": 0.9},
+    ]
 
-    print(f"Output: {tokenizer.decode(output_ids[0])}")
+    for config in configs:
+        label = config.pop("label")
+        print(f"\n--- {label} ---")
+        print(f"Prompt: {prompt}")
+        with torch.no_grad():
+            output_ids = model.generate(token_ids, max_new_tokens=30, **config)
+        print(f"Output: {tokenizer.decode(output_ids[0])}")
 
 
 if __name__ == "__main__":
