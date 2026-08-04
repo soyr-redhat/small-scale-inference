@@ -13,7 +13,7 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["layers*", "architectures*", "weights*"]
+include = ["layers*", "architectures*", "weights*", "engine*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
