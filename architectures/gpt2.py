@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from layers.transformer import TransformerBlock
-
+from engine.sampling import sample_next_token
 
 class GPT2(nn.Module):
     def __init__(self, vocab_size=50257, d_model=768, n_heads=12, n_layers=12, d_ff=3072, max_seq_len=1024):
@@ -43,7 +43,11 @@ class GPT2(nn.Module):
     def generate(self, 
                 token_ids: torch.Tensor,
                 max_new_tokens: int = 50,
-                kv_caches = None) -> torch.Tensor:
+                kv_caches = None,
+                temperature: float = 1.0,
+                top_k: int | None = None,
+                top_p: float | None = None
+                ) -> torch.Tensor:
         # Greedy autoregressive decoding
         for _ in range(max_new_tokens):
             if kv_caches is None:
@@ -51,12 +55,11 @@ class GPT2(nn.Module):
             else:
                 input_ids = token_ids[:, -1:]
 
-            
             # Truncate to max context window
             logits, kv_caches = self.forward(input_ids, kv_caches)
             # Take logits at last position and pick highest-probability token
             logits = logits[:, -1, :]
-            top_one = torch.argmax(logits, dim=-1, keepdim=True)
+            top_one = sample_next_token(logits, temperature, top_k, top_p)
             token_ids = torch.concat([token_ids, top_one], dim=1)
 
         return token_ids
